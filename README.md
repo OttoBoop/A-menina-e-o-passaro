@@ -4,7 +4,7 @@ Uma ficção interativa sobre amor, cuidado e a linha tênue entre proteger e pr
 
 > Uma mulher encontra um pássaro filhote, cria-o, dá-lhe o melhor de tudo. Quando o pássaro cresce e aprende a voar, ela tem medo de que ele vá embora e não volte. O que ela faz com esse medo decide tudo.
 
-**[▶ Jogar agora](https://ottoboop.github.io/a-menina-e-o-passaro/)** *(GitHub Pages — veja a seção [Como publicar](#como-publicar))*, ou simplesmente abra o arquivo [`index.html`](index.html) em qualquer navegador.
+**[▶ Jogar agora](https://ottoboop.github.io/A-menina-e-o-passaro/)** *(GitHub Pages — após ativar; veja [Como publicar](#como-publicar))*, ou simplesmente abra o arquivo [`index.html`](index.html) em qualquer navegador.
 
 ---
 
@@ -77,11 +77,12 @@ Como o jogo é um grafo de cenas, os erros perigosos são estruturais. Um valida
 
 ## Como publicar
 
-O jogo é estático: qualquer hospedagem de arquivos serve. Para usar o **GitHub Pages**:
+O jogo é estático: qualquer hospedagem de arquivos serve. Para usar o **GitHub Pages** (ativação única, feita pelo dono do repositório):
 
-1. Vá em **Settings → Pages** no repositório.
-2. Em **Source**, escolha a branch (`main`) e a pasta raiz (`/root`).
-3. Salve. Em alguns instantes o jogo estará no ar em `https://<usuário>.github.io/<repositório>/`.
+1. Vá em **[Settings → Pages](https://github.com/OttoBoop/A-menina-e-o-passaro/settings/pages)**.
+2. Em **Source**, escolha **Deploy from a branch**.
+3. Em **Branch**, selecione `main` e a pasta **`/ (root)`**, e clique em **Save**.
+4. Em ~1 minuto o jogo estará no ar em **https://ottoboop.github.io/A-menina-e-o-passaro/**.
 
 Para compartilhar offline, basta enviar o próprio `index.html` — ele é autossuficiente.
 
