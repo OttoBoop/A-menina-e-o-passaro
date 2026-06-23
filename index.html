@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1d2333">
+<title>A Moça e o Pássaro</title>
+<style>
+:root{
+  --cream:#ede6d6;
+  --cream-dim:rgba(237,230,214,.62);
+  --gold:#e0b153;
+  --hairline:rgba(237,230,214,.16);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background-color:#1d2333;color:var(--cream);
+  font-family:var(--serif);
+  transition:background-color 1.4s ease;
+}
+#app{max-width:38rem;margin:0 auto;padding:1rem 1.25rem 3.5rem;min-height:100svh;display:flex;flex-direction:column}
+header{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.35rem 0 1.15rem}
+.brand{font-family:var(--sans);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--cream-dim)}
+#langBtn{
+  font-family:var(--sans);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--cream);background:none;border:1px solid var(--hairline);border-radius:999px;
+  padding:.42rem .9rem;cursor:pointer;transition:border-color .25s,color .25s;
+}
+#langBtn:hover,#langBtn:focus-visible{border-color:var(--gold);color:var(--gold)}
+main{flex:1}
+#stage{transition:opacity .38s ease,transform .38s ease}
+#stage.out{opacity:0;transform:translateY(8px)}
+.art{margin:0 0 1.45rem;border-radius:16px;overflow:hidden;border:1px solid rgba(0,0,0,.28)}
+.art svg{display:block;width:100%;height:auto}
+.prose p{margin:0 0 1.05em;font-size:1.13rem;line-height:1.8}
+.prose p:last-child{margin-bottom:0}
+.prose p.extra{color:var(--cream-dim);font-style:italic}
+.choices{margin-top:1.7rem;display:grid;gap:.65rem}
+.choice{
+  font-family:var(--serif);font-size:1.04rem;line-height:1.5;text-align:left;color:var(--cream);
+  background:rgba(255,255,255,.028);border:1px solid var(--hairline);border-radius:12px;
+  padding:.95rem 1.15rem;cursor:pointer;
+  transition:border-color .25s,background-color .25s,color .25s;
+}
+.choice:hover,.choice:focus-visible{border-color:var(--gold);color:var(--gold);background:rgba(224,177,83,.06)}
+.choice:focus-visible,#langBtn:focus-visible,.begin:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.badge{font-family:var(--sans);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;margin:0 0 .45rem}
+.badge.good{color:#93d0ae}
+.badge.bitter{color:#e2c178}
+.badge.tragic{color:#df97a0}
+.ending-title{font-size:1.75rem;font-weight:500;font-style:italic;line-height:1.25;margin:0 0 1.1rem}
+.dots{
+  display:flex;align-items:center;gap:.5rem;margin-top:2.1rem;
+  font-family:var(--sans);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim);
+}
+.dot{width:9px;height:9px;border-radius:50%;border:1px solid var(--cream-dim);display:inline-block}
+.dot.on.good{background:#93d0ae;border-color:#93d0ae}
+.dot.on.bitter{background:#e2c178;border-color:#e2c178}
+.dot.on.tragic{background:#df97a0;border-color:#df97a0}
+.dots span:last-child{margin-left:.35rem}
+.title-screen{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:9svh}
+.title-bird{margin-bottom:1.7rem}
+.title-bird svg{display:block}
+.eyebrow{font-family:var(--sans);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:0 0 .95rem}
+h1{font-size:clamp(2.1rem,8.5vw,3.1rem);font-weight:500;line-height:1.12;margin:0 0 .9rem}
+.subtitle{font-style:italic;color:var(--cream-dim);font-size:1.08rem;margin:0 0 2.5rem}
+.begin{
+  font-family:var(--serif);font-size:1.05rem;color:#221a0d;background:var(--gold);
+  border:none;border-radius:999px;padding:.85rem 2.5rem;cursor:pointer;transition:filter .2s;
+}
+.begin:hover{filter:brightness(1.08)}
+@media (prefers-reduced-motion:no-preference){
+  .title-bird svg{animation:bob 3.4s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+}
+@media (prefers-reduced-motion:reduce){
+  body,#stage,.choice,#langBtn{transition:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <span class="brand" id="brand"></span>
+    <button id="langBtn" aria-label="Mudar idioma / Switch language">EN</button>
+  </header>
+  <main><div id="stage" aria-live="polite"></div></main>
+</div>
+<script>
+/*STORY-START*/
+const STORY = {
+  ui: {
+    brand:    { pt: "uma fábula interativa", en: "an interactive fable" },
+    title:    { pt: "A Moça e o Pássaro", en: "The Girl and the Bird" },
+    eyebrow:  { pt: "uma fábula breve · três finais", en: "a short fable · three endings" },
+    subtitle: { pt: "Sobre amar o que tem asas.", en: "On loving what has wings." },
+    begin:    { pt: "Começar", en: "Begin" },
+    back:     { pt: "— Voltar à última escolha", en: "— Return to the last choice" },
+    restart:  { pt: "↺ Recomeçar do início", en: "↺ Start over" },
+    foundLabel: { pt: "finais encontrados", en: "endings found" },
+    varLabel:   { pt: "variações do agridoce", en: "bittersweet variations" }
+  },
+  scenes: {
+
+    storm: {
+      sky: "#20262f", art: "storm",
+      text: [
+        { pt: "Ela o encontrou depois da tempestade: uma coisinha escura tremendo debaixo da mangueira, leve demais até para ter medo. Cabia inteiro numa mão fechada.",
+          en: "She found him after the storm: a small dark thing shivering under the mango tree, too light even to be afraid. He fit whole inside one closed hand." },
+        { pt: "Ela decidiu, sem bem decidir, que ele era dela.",
+          en: "She decided, without quite deciding, that he was hers." }
+      ],
+      choices: [
+        { label: { pt: "— Dar um nome a ele", en: "— Give him a name" }, to: "care", set: "named" },
+        { label: { pt: "— Não dar nome. Nomear é começar a perder", en: "— No name. To name is to begin to lose" }, to: "care" }
+      ]
+    },
+
+    care: {
+      sky: "#2a2638", art: "care",
+      text: [
+        { if: "named",
+          pt: "Ela o chamou de Aurélio, pelo dourado que já se anunciava na ponta das asas. Quando aprendeu a cantar, ele cantava o próprio nome em três notas — sempre as mesmas três.",
+          en: "She called him Aurélio, for the gold already showing at the tips of his wings. When he learned to sing, he sang his own name in three notes — always the same three." },
+        { if: "!named",
+          pt: "Ela não lhe deu nome; nomear, pensava, é como a perda começa. Chamava-o apenas de ele, e a casa inteira sabia de quem se falava.",
+          en: "She gave him no name; naming, she thought, is how losing begins. She called him only him, and the whole house knew who was meant." },
+        { pt: "Ele sarou depressa e cresceu bonito de doer. Faltava decidir uma coisa pequena, dessas que parecem não decidir nada: como alimentá-lo.",
+          en: "He healed quickly and grew beautiful enough to hurt. One small thing remained to be decided — the kind that seems to decide nothing: how to feed him." }
+      ],
+      choices: [
+        { label: { pt: "— Na palma da mão, todas as manhãs", en: "— From the palm of her hand, every morning" }, to: "w1", set: "hand" },
+        { label: { pt: "— Espalhar sementes no parapeito, para ele aprender a procurar", en: "— Scatter seeds on the windowsill, so he learns to search" }, to: "w1" }
+      ]
+    },
+
+    w1: {
+      sky: "#25303d", art: "fledge",
+      text: [
+        { pt: "Numa manhã de vento, ele atravessou a sala voando pela primeira vez — desajeitado, glorioso — e pousou na beirada da janela aberta.",
+          en: "On a windy morning he flew across the room for the first time — clumsy, glorious — and landed on the edge of the open window." },
+        { pt: "Não fez menção de ir. Só ficou ali, olhando o céu como quem lê uma carta antiga.",
+          en: "He made no move to leave. He just stayed there, looking at the sky the way one reads an old letter." }
+      ],
+      choices: [
+        { label: { pt: "— Chamá-lo de volta para dentro", en: "— Call him back inside" }, to: "tempest", grip: 1 },
+        { label: { pt: "— Deixar que ele olhe", en: "— Let him look" }, to: "tempest" }
+      ]
+    },
+
+    tempest: {
+      sky: "#1e1b2a", art: "tempest",
+      text: [
+        { pt: "Semanas depois, uma tempestade chegou de noite, parecida com aquela que o trouxe. O vento batia a janela contra o batente; a chuva entrava um palmo.",
+          en: "Weeks later a storm came in the night, much like the one that had brought him. The wind knocked the window against its frame; the rain came in a hand's width." },
+        { pt: "Do poleiro, ele olhava a escuridão lá fora sem nenhum medo — e isso, ela percebeu, foi o que a assustou.",
+          en: "From his perch he watched the dark outside without any fear — and that, she realized, was what frightened her." }
+      ],
+      choices: [
+        { label: { pt: "— Fechar a janela. Só esta noite", en: "— Close the window. Just for tonight" }, to: "cat", grip: 1, set: "stormClosed" },
+        { label: { pt: "— Deixar aberta, como todas as noites", en: "— Leave it open, like every night" }, to: "cat" }
+      ]
+    },
+
+    cat: {
+      sky: "#2b3240", art: "cat",
+      text: [
+        { pt: "No sábado, um gato apareceu no muro. Ficou uma tarde inteira olhando a janela, paciente como uma dívida.",
+          en: "On Saturday a cat appeared on the wall. It spent a whole afternoon watching the window, patient as a debt." },
+        { pt: "A vizinha riu do portão: 'Esse aí, quando aprender a voar direito, some. Passarinho bonito não fica.'",
+          en: "The neighbor laughed from the gate: 'That one, once he learns to fly properly, is gone. Pretty birds don't stay.'" }
+      ],
+      choices: [
+        { label: { pt: "— Não deixá-lo mais sozinho na janela", en: "— Never leave him alone at the window again" }, to: "window", grip: 1 },
+        { label: { pt: "— Deixar o dia seguir", en: "— Let the day go on" }, to: "window" }
+      ]
+    },
+
+    window: {
+      sky: "#25303d", art: "fledge", fork: true,
+      text: [
+        { if: "grip>=2",
+          pt: "O medo, àquela altura, já tinha endereço: morava no armário, dentro de uma gaiola comprada 'só por garantia' na semana do gato. Ela nem se lembrava de ter decidido comprá-la.",
+          en: "By then, fear had an address: it lived in the closet, inside a cage bought 'just in case' the week of the cat. She didn't even remember deciding to buy it." },
+        { pt: "Naquela manhã, ele abriu as asas na beirada da janela e ficou — um segundo a mais do que de costume. O céu inteiro do lado de fora; o coração dela se fechando feito um punho.",
+          en: "That morning he opened his wings on the edge of the window and stayed — one second longer than usual. The whole sky outside; her heart closing like a fist." },
+        { if: "grip<=1",
+          pt: "A ideia da gaiola passou por ela como um cheiro estranho: chegou, incomodou, não era dela.",
+          en: "The idea of a cage passed through her like a strange smell: it arrived, it bothered her, it wasn't hers." }
+      ],
+      choices: [
+        { label: { pt: "— Trazer a gaiola, só por um tempo", en: "— Bring the cage, just for a while" }, to: "cage" },
+        { label: { pt: "— Não fazer nada. Confiar", en: "— Do nothing. Trust" }, to: "sky" }
+      ]
+    },
+
+    sky: {
+      sky: "#1f3850", art: "sky",
+      text: [
+        { pt: "Ela não fez nada — que é o jeito mais difícil de fazer alguma coisa. Por três dias ele foi e voltou, cada vez mais longe, cada vez mais alto, até que numa tarde o céu o engoliu por inteiro.",
+          en: "She did nothing — which is the hardest way of doing something. For three days he went and came back, each time farther, each time higher, until one afternoon the sky swallowed him whole." },
+        { pt: "A casa ficou do tamanho do silêncio.",
+          en: "The house shrank to the size of its silence." }
+      ],
+      choices: [
+        { label: { pt: "— Esperar", en: "— Wait" }, to: "vigil" }
+      ]
+    },
+
+    vigil: {
+      sky: "#1b2030", art: "vigil", fork: true,
+      text: [
+        { pt: "Três manhãs de fruta intocada na beirada. A vizinha já a olhava com pena, que é a pior das visitas.",
+          en: "Three mornings of untouched fruit on the sill. The neighbor was already looking at her with pity, which is the worst kind of visit." },
+        { pt: "Na quarta noite, a mão dela ficou um tempo demais no trinco da janela.",
+          en: "On the fourth night, her hand stayed a moment too long on the window latch." }
+      ],
+      choices: [
+        { label: { pt: "— Fechar a janela. Chega", en: "— Close the window. Enough" }, to: "conf_window" },
+        { label: { pt: "— Esperar mais uma manhã", en: "— Wait one more morning" }, to: "conf_good" }
+      ]
+    },
+
+    conf_good: {
+      sky: "#1b2030", art: "vigil",
+      text: [
+        { pt: "Antes do sol, três notas conhecidas atravessaram o quarto. Ela manteve os olhos fechados mais um instante — não para duvidar, mas para se perguntar, pela última vez, por que tinha deixado a janela aberta esse tempo todo.",
+          en: "Before the sun, three familiar notes crossed the room. She kept her eyes closed one more moment — not to doubt, but to ask herself, one last time, why she had kept the window open all this time." }
+      ],
+      choices: [
+        { label: { pt: "— Porque amar é abrir a mão", en: "— Because to love is to open your hand" }, to: "end_good", motive: "grace" },
+        { label: { pt: "— Porque, no fundo, eu sempre soube", en: "— Because, deep down, I always knew" }, to: "end_good", motive: "faith" }
+      ]
+    },
+
+    end_good: {
+      sky: "#3d3022", art: "good",
+      ending: { cls: "good", badge: { pt: "final feliz", en: "good ending" }, title: { pt: "O céu aberto", en: "The open sky" } },
+      text: [
+        { pt: "Ele estava na janela — maior, mais dourado, com o céu inteiro dobrado dentro das asas. Comeu da fruta, cantou para ela e partiu de novo. E voltou. A vida inteira foi assim: ele partindo, ele voltando, livre nas duas direções.",
+          en: "He was at the window — bigger, more golden, the whole sky folded into his wings. He ate the fruit, sang to her, and left again. And returned. Their whole life was like that: him leaving, him returning, free in both directions." },
+        { pt: "Ela entendeu que ele sempre tinha sido dela — mas do jeito que o céu é: de quem olha para cima.",
+          en: "She understood that he had always been hers — but the way the sky is: it belongs to whoever looks up." },
+        { if: "named", em: true,
+          pt: "E toda vez que ele chegava, ela dizia o nome dele — e ele respondia: três notas, sempre as mesmas três.",
+          en: "And every time he arrived she said his name — and he answered: three notes, always the same three." },
+        { if: "!named", em: true,
+          pt: "Ela nunca lhe deu um nome. Nunca foi preciso.",
+          en: "She never gave him a name. It was never needed." },
+        { if: "grip==0", em: true,
+          pt: "E naquele verão — isso ela não contou a ninguém, para não gastar — ele fez ninho na mangueira do quintal, a mesma que um dia o derrubou. Ela passou a acordar com filhotes ensaiando voos curtos entre os galhos.",
+          en: "And that summer — this she told no one, so as not to spend it — he built a nest in the mango tree in the yard, the same one that had once dropped him. She began to wake to fledglings rehearsing short flights between the branches." },
+        { if: "motive==grace", em: true,
+          pt: "Amar é abrir a mão. Na palma aberta, sempre coube mais céu.",
+          en: "To love is to open your hand. An open palm always held more sky." },
+        { if: "motive==faith", em: true,
+          pt: "No fundo, ela sempre soube. Saber não tinha tirado o medo — só tinha ensinado onde guardá-lo.",
+          en: "Deep down, she always knew. Knowing had not taken the fear away — it had only taught her where to keep it." }
+      ]
+    },
+
+    conf_window: {
+      sky: "#20242e", art: "vigil",
+      text: [
+        { pt: "O trinco era pequeno e fez um barulho pequeno. Pronto. Ela ficou um instante diante do próprio reflexo no vidro, procurando o motivo.",
+          en: "The latch was small and made a small sound. Done. She stood a moment before her own reflection in the glass, searching for the reason." }
+      ],
+      choices: [
+        { label: { pt: "— Ele não ia voltar mesmo", en: "— He wasn't coming back anyway" }, to: "end_window", motive: "denial" },
+        { label: { pt: "— Eu só não aguentava mais esperar", en: "— I just couldn't bear the waiting anymore" }, to: "end_window", motive: "exhaust" }
+      ]
+    },
+
+    end_window: {
+      sky: "#2a3140", art: "window_closed",
+      ending: { cls: "bitter", badge: { pt: "final agridoce", en: "bittersweet ending" }, title: { pt: "A janela fechada", en: "The closed window" } },
+      text: [
+        { pt: "Ele voltou na manhã seguinte.",
+          en: "He came back the next morning." },
+        { pt: "Deu duas voltas diante do vidro, devagar, como quem confere o endereço. Pousou na beirada de fora, cantou uma vez para a janela fechada — e o céu o levou de volta, dessa vez sem pressa nenhuma.",
+          en: "He circled twice before the glass, slowly, like someone checking the address. He landed on the outer sill, sang once at the closed window — and the sky took him back, this time in no hurry at all." },
+        { pt: "Ela encontrou só uma pena no parapeito, do lado de fora, onde a mão não alcançava.",
+          en: "All she found was a feather on the ledge, on the outside, where her hand couldn't reach." },
+        { if: "stormClosed", em: true,
+          pt: "Fechar, afinal, ela já tinha treinado uma vez — naquela noite de tempestade. Só uma noite, ela disse. As janelas aprendem rápido.",
+          en: "Closing it, after all, she had already practiced once — on the night of the storm. Just one night, she had said. Windows learn fast." },
+        { if: "motive==denial", em: true,
+          pt: "Ele não ia voltar mesmo, ela repetiu por anos. Repetir nunca tornou verdade.",
+          en: "He wasn't coming back anyway, she repeated for years. Repeating never made it true." },
+        { if: "motive==exhaust", em: true,
+          pt: "Esperar doía. Ela trocou a dor pela culpa achando que era um bom negócio.",
+          en: "Waiting hurt. She traded the pain for guilt, believing it a fair trade." }
+      ]
+    },
+
+    cage: {
+      sky: "#272029", art: "cage", fork: true,
+      text: [
+        { if: "grip>=2",
+          pt: "A gaiola saiu do armário onde esperava desde a semana do gato. Era a mais bonita da loja: arames dourados, poleiro de jacarandá. 'Só por um tempo', ela disse, e a frase coube com folga na porta aberta.",
+          en: "The cage came out of the closet where it had waited since the week of the cat. It was the prettiest in the shop: golden wire, a rosewood perch. 'Just for a while,' she said, and the phrase fit easily through the open door." },
+        { if: "grip<=1",
+          pt: "A gaiola chegou da loja no dia seguinte, a mais bonita que havia: arames dourados, poleiro de jacarandá. 'Só por um tempo', ela disse, e a frase coube com folga na porta aberta.",
+          en: "The cage arrived from the shop the next day, the prettiest they had: golden wire, a rosewood perch. 'Just for a while,' she said, and the phrase fit easily through the open door." },
+        { if: "stormClosed", em: true,
+          pt: "Era o mesmo tom de voz da noite da tempestade. Só esta noite, ela tinha dito. As pequenas frases é que carregam as grandes portas.",
+          en: "It was the same tone of voice as the night of the storm. Just for tonight, she had said. It's the small phrases that carry the big doors." },
+        { pt: "Dentro, ele tinha o melhor de tudo — menos o resto. O canto foi afinando até virar um fio. De madrugada, ela acordava com o som das asas batendo nos arames: um relógio descompassado, marcando uma hora que não chegava nunca.",
+          en: "Inside, he had the best of everything — except the rest. His song thinned until it was a thread. At dawn she would wake to the sound of wings against wire: an arrhythmic clock, striking an hour that never came." }
+      ],
+      choices: [
+        { label: { pt: "— Abrir a porta da gaiola", en: "— Open the cage door" }, to: "conf_door" },
+        { label: { pt: "— Manter. Só mais um tempo", en: "— Keep it. Just a while longer" }, to: "escape" },
+        { label: { pt: "— Abrir a gaveta da tesoura", en: "— Open the scissors drawer" }, to: "scissors" }
+      ]
+    },
+
+    conf_door: {
+      sky: "#272029", art: "cage",
+      text: [
+        { pt: "A mão dela parou no trinco da gaiola. Trincos, ela ia aprendendo, são o lugar onde a gente se decide.",
+          en: "Her hand stopped on the cage latch. Latches, she was learning, are where people decide who they are." }
+      ],
+      choices: [
+        { label: { pt: "— Porque eu o amo", en: "— Because I love him" }, to: "end_door", motive: "love" },
+        { label: { pt: "— Porque não suporto mais o som das asas", en: "— Because I can't bear the sound of his wings anymore" }, to: "end_door", motive: "relief" }
+      ]
+    },
+
+    end_door: {
+      sky: "#24313a", art: "neutral",
+      ending: { cls: "bitter", badge: { pt: "final agridoce", en: "bittersweet ending" }, title: { pt: "A porta aberta", en: "The open door" } },
+      text: [
+        { pt: "Ela queria que fosse um presente; ele entendeu como uma trégua.",
+          en: "She meant it as a gift; he took it as a truce." },
+        { pt: "Passou por ela como uma pedra dourada atirada ao contrário — sem dar uma volta sobre a casa, sem olhar para trás. O céu o recebeu como se nada tivesse acontecido.",
+          en: "He shot past her like a golden stone thrown in reverse — no circle over the house, no look back. The sky received him as if nothing had ever happened." },
+        { pt: "Ela deixou a janela aberta pelo resto da vida. Ele nunca voltou — mas em algum lugar, ela sabia, ele estava voando.",
+          en: "She left the window open for the rest of her life. He never came back — but somewhere, she knew, he was flying." },
+        { if: "hand", em: true,
+          pt: "Por anos, o pior pensamento chegava na hora do café: ele nunca tinha procurado o próprio alimento. Fora ela quem escolhera assim — uma palma aberta de cada vez.",
+          en: "For years the worst thought arrived with morning coffee: he had never once searched for his own food. She had chosen it that way — one open palm at a time." },
+        { if: "!hand", em: true,
+          pt: "Restava um consolo do tamanho de uma semente: ele sabia se virar. Tinha sido ela mesma que ensinara, num parapeito, sem saber para quê.",
+          en: "One consolation remained, the size of a seed: he knew how to fend for himself. She herself had taught him, on a windowsill, not knowing what for." },
+        { if: "named", em: true,
+          pt: "Durante anos, a quaisquer três notas vindas da rua, ela virava a cabeça. Nunca era ele.",
+          en: "For years, at any three notes from the street, she turned her head. It was never him." },
+        { if: "!named", em: true,
+          pt: "Anos depois, ela se pegou desejando ter lhe dado um nome — qualquer coisa que servisse para chamar de volta.",
+          en: "Years later she caught herself wishing she had named him — anything that could call him back." },
+        { if: "motive==love", em: true,
+          pt: "Porque o amava. Foi a única coisa que ela disse à vizinha — e a vizinha, pela primeira vez, não riu.",
+          en: "Because she loved him. It was all she ever said to the neighbor — and the neighbor, for the first time, didn't laugh." },
+        { if: "motive==relief", em: true,
+          pt: "O silêncio que ela tanto quis chegou inteiro, de uma vez. Ninguém avisa que o silêncio também bate asas a noite toda.",
+          en: "The silence she had wanted arrived whole, all at once. No one warns you that silence also beats its wings all night." }
+      ]
+    },
+
+    escape: {
+      sky: "#221c25", art: "broken",
+      text: [
+        { pt: "Ela manteve. Mais um tempo, depois outro. Os tempos emendaram.",
+          en: "She kept it. A while longer, then another. The whiles ran together." },
+        { pt: "Numa madrugada, o som mudou: não era mais asa em arame, era arame cedendo. Quando ela chegou à sala, dois arames estavam abertos como um parêntese — e a gaiola, vazia. Presa no metal torcido, uma única pena dourada.",
+          en: "One dawn the sound changed: it was no longer wing against wire, it was wire giving way. When she reached the room, two bars stood open like a parenthesis — and the cage was empty. Caught in the twisted metal, a single golden feather." }
+      ],
+      choices: [
+        { label: { pt: "— Guardar a gaiola, por via das dúvidas", en: "— Keep the cage, just in case" }, to: "end_escape", motive: "keep" },
+        { label: { pt: "— Desmontar a gaiola no mesmo dia", en: "— Take the cage apart that same day" }, to: "end_escape", motive: "undo" }
+      ]
+    },
+
+    end_escape: {
+      sky: "#24313a", art: "neutral",
+      ending: { cls: "bitter", badge: { pt: "final agridoce", en: "bittersweet ending" }, title: { pt: "A fuga", en: "The escape" } },
+      text: [
+        { pt: "Ele não deu volta nenhuma sobre a casa. Quem foge não se despede — despedida é coisa de quem pode voltar.",
+          en: "He made no circle over the house. What escapes does not say goodbye — goodbyes belong to those who might return." },
+        { pt: "Ela deixou a janela aberta pelo resto da vida. As frutas na beirada amadureciam, passavam, juntavam formigas. Ele nunca voltou — mas em algum lugar, ela torcia, ele estava voando.",
+          en: "She left the window open for the rest of her life. The fruit on the sill ripened, turned, drew ants. He never came back — but somewhere, she hoped, he was flying." },
+        { if: "hand", em: true,
+          pt: "E o pensamento de sempre, na hora do café: ele nunca tinha procurado o próprio alimento. Ela rezava para o mundo ter parapeitos generosos.",
+          en: "And the same thought, every morning with coffee: he had never once searched for his own food. She prayed the world was generous with its windowsills." },
+        { if: "!hand", em: true,
+          pt: "Um consolo do tamanho de uma semente: ele sabia se virar. Ela mesma tinha ensinado, sem saber que ensinava para isso.",
+          en: "One consolation the size of a seed: he knew how to fend for himself. She herself had taught him, not knowing what she was teaching it for." },
+        { if: "named", em: true,
+          pt: "Durante anos, a quaisquer três notas vindas da rua, ela virava a cabeça. Nunca era ele.",
+          en: "For years, at any three notes from the street, she turned her head. It was never him." },
+        { if: "!named", em: true,
+          pt: "Anos depois, ela se pegou desejando ter lhe dado um nome — qualquer coisa que servisse para chamar de volta.",
+          en: "Years later she caught herself wishing she had named him — anything that could call him back." },
+        { if: "motive==keep", em: true,
+          pt: "A gaiola ficou no armário a vida inteira: limpa, pronta, à espera. Há medos que a gente guarda como quem guarda esperança — e são a mesma coisa, vista de lados diferentes.",
+          en: "The cage stayed in the closet her whole life: clean, ready, waiting. There are fears we keep the way we keep hope — and they are the same thing, seen from different sides." },
+        { if: "motive==undo", em: true,
+          pt: "Dos arames dourados ela fez um suporte para a samambaia. Foi o mais perto que conseguiu chegar de um pedido de desculpas.",
+          en: "From the golden wires she made a stand for the fern. It was the closest she ever came to an apology." }
+      ]
+    },
+
+    scissors: {
+      sky: "#1a1620", art: "scissors", fork: true,
+      text: [
+        { pt: "A tesoura da gaveta era pequena, de cabo azul, comprada um dia para outra coisa qualquer. Não dói, diziam os livros. As penas crescem de novo, diziam os livros.",
+          en: "The scissors in the drawer were small, blue-handled, bought one day for something else entirely. It does not hurt, the books said. The feathers grow back, the books said." },
+        { pt: "Da gaiola, ele a olhava com o olho redondo de quem entende tudo, menos isso.",
+          en: "From the cage he watched her with the round eye of one who understands everything except this." }
+      ],
+      choices: [
+        { label: { pt: "— Soltar a tesoura", en: "— Put the scissors down" }, to: "relent" },
+        { label: { pt: "— Cortar. É para protegê-lo", en: "— Cut. It's to protect him" }, to: "end_bad", motive: "protect" },
+        { label: { pt: "— Cortar. Ele é meu", en: "— Cut. He is mine" }, to: "end_bad", motive: "mine" }
+      ]
+    },
+
+    relent: {
+      sky: "#272029", art: "cage", fork: true,
+      text: [
+        { pt: "A tesoura voltou para a gaveta. A mão dela tremia um pouco — do que quase foi.",
+          en: "The scissors went back into the drawer. Her hand trembled a little — at what had almost been." },
+        { pt: "A gaiola continuou na sala. O som das asas também.",
+          en: "The cage stayed in the room. So did the sound of the wings." }
+      ],
+      choices: [
+        { label: { pt: "— Abrir a porta da gaiola", en: "— Open the cage door" }, to: "conf_door" },
+        { label: { pt: "— Manter. Só mais um tempo", en: "— Keep it. Just a while longer" }, to: "escape" },
+        { label: { pt: "— Abrir a gaveta de novo", en: "— Open the drawer again" }, to: "scissors" }
+      ]
+    },
+
+    end_bad: {
+      sky: "#16141a", art: "bad",
+      ending: { cls: "tragic", badge: { pt: "final trágico", en: "tragic ending" }, title: { pt: "As asas cortadas", en: "The clipped wings" } },
+      text: [
+        { pt: "Foi rápido. Duas penas de cada lado, simétricas, quase um capricho. Ele nem se debateu — confiava nela, que era exatamente o problema.",
+          en: "It was quick. Two feathers on each side, symmetrical, almost careful. He didn't even struggle — he trusted her, which was exactly the problem." },
+        { pt: "Ele nunca mais tentou voar. Parou de subir no poleiro, depois parou de comer o bom mamão, depois parou de cantar — nessa ordem, como quem apaga as luzes de uma casa, cômodo por cômodo.",
+          en: "He never tried to fly again. He stopped climbing to his perch, then stopped eating the good papaya, then stopped singing — in that order, like someone turning off the lights of a house, room by room." },
+        { pt: "Numa manhã, ela o encontrou quieto no fundo da gaiola. Coube inteiro numa mão fechada, leve como no dia da tempestade. Só então ela entendeu o que tinha guardado tão bem: nunca foi um pássaro. Era o voo.",
+          en: "One morning she found him still at the bottom of the cage. He fit whole inside one closed hand, light as the day of the storm. Only then did she understand what she had kept so well: it was never a bird. It was the flight." },
+        { if: "named", em: true,
+          pt: "Havia um nome nesta história. Ela nunca mais conseguiu dizê-lo — e por isso ele não está escrito aqui.",
+          en: "There was a name in this story. She could never say it again — which is why it is not written here." },
+        { if: "!named", em: true,
+          pt: "Ela nunca lhe dera um nome. Agora não havia o que chamar.",
+          en: "She had never given him a name. Now there was nothing left to call." },
+        { if: "motive==protect", em: true,
+          pt: "Era para protegê-lo, ela jurou. A palavra proteção ficou no quarto muito tempo depois do silêncio, pendurada como uma gaiola vazia.",
+          en: "It was to protect him, she swore. The word protection hung in the room long after the silence, like an empty cage." },
+        { if: "motive==mine", em: true,
+          pt: "Ele foi dela até o fim — do único jeito que uma coisa consegue ser de alguém. O céu, esse, nunca foi de ninguém: continuou lá fora, inteiro, todas as manhãs.",
+          en: "He was hers until the end — the only way a thing can ever belong to someone. The sky, for its part, was never anyone's: it stayed outside, whole, every morning." }
+      ]
+    }
+
+  }
+};
+/*STORY-END*/
+/*ART-START*/
+const ART = {
+
+  titlebird: `<svg width="92" height="74" viewBox="0 0 92 74" aria-hidden="true">
+    <polygon points="26,44 5,33 23,53" fill="#c79a45"/>
+    <ellipse cx="44" cy="46" rx="22" ry="15" fill="#e0b153"/>
+    <path d="M34 42 Q48 22 62 39 Q49 47 34 42 Z" fill="#c79a45"/>
+    <circle cx="64" cy="31" r="10" fill="#e0b153"/>
+    <polygon points="73,29 85,32 73,35" fill="#b8893f"/>
+    <circle cx="66.5" cy="29" r="1.8" fill="#221a0d"/>
+    <path d="M40 60 L40 69 M50 60 L50 69" stroke="#8a6a33" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  </svg>`,
+
+  storm: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#1b212c"/>
+    <ellipse cx="80" cy="24" rx="95" ry="24" fill="#141a23"/>
+    <ellipse cx="235" cy="14" rx="125" ry="28" fill="#10151d"/>
+    <ellipse cx="345" cy="30" rx="80" ry="22" fill="#141a23"/>
+    <g stroke="#3d4c61" stroke-width="1.6" stroke-linecap="round" opacity=".75">
+      <line x1="56" y1="62" x2="48" y2="86"/><line x1="106" y1="50" x2="98" y2="74"/>
+      <line x1="156" y1="66" x2="148" y2="90"/><line x1="206" y1="52" x2="198" y2="76"/>
+      <line x1="84" y1="104" x2="76" y2="128"/><line x1="134" y1="116" x2="126" y2="140"/>
+      <line x1="184" y1="106" x2="176" y2="130"/><line x1="120" y1="150" x2="112" y2="174"/>
+      <line x1="60" y1="148" x2="52" y2="172"/><line x1="170" y1="158" x2="164" y2="178"/>
+    </g>
+    <rect y="188" width="380" height="32" fill="#10141c"/>
+    <ellipse cx="110" cy="198" rx="44" ry="5" fill="#1c2532"/>
+    <path d="M268 190 L273 128 Q275 114 286 106 L281 190 Z" fill="#2e2620"/>
+    <ellipse cx="290" cy="90" rx="60" ry="35" fill="#1f2e24"/>
+    <ellipse cx="250" cy="106" rx="36" ry="23" fill="#243627"/>
+    <ellipse cx="326" cy="108" rx="30" ry="20" fill="#243627"/>
+    <ellipse cx="302" cy="116" rx="5" ry="7" fill="#c98a3a"/>
+    <ellipse cx="264" cy="120" rx="5" ry="7" fill="#c98a3a"/>
+    <ellipse cx="244" cy="183" rx="9" ry="6.5" fill="#e0b153"/>
+    <circle cx="253" cy="177" r="4.5" fill="#e0b153"/>
+    <polygon points="257,176 263,178 257,180" fill="#b8893f"/>
+    <circle cx="254.5" cy="176" r="1" fill="#1b212c"/>
+  </svg>`,
+
+  care: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#261f33"/>
+    <circle cx="190" cy="92" r="88" fill="#322847"/>
+    <rect y="160" width="380" height="60" fill="#1a1426"/>
+    <rect y="160" width="380" height="5" fill="#3b2e22"/>
+    <polygon points="122,136 96,126 118,150" fill="#c79a45"/>
+    <ellipse cx="150" cy="140" rx="28" ry="19" fill="#e0b153"/>
+    <path d="M134 136 Q152 114 170 132 Q152 144 134 136 Z" fill="#c79a45"/>
+    <circle cx="180" cy="117" r="13" fill="#e0b153"/>
+    <polygon points="192,114 204,117 192,120" fill="#b8893f"/>
+    <circle cx="183.5" cy="114" r="1.8" fill="#261f33"/>
+    <path d="M142 158 L142 166 M158 158 L158 166" stroke="#8a6a33" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+    <path d="M248 162 A34 34 0 0 1 316 162 Z" fill="#e08a4b"/>
+    <path d="M256 162 A26 26 0 0 1 308 162 Z" fill="#f5b078"/>
+    <g fill="#5a2e1c">
+      <circle cx="270" cy="156" r="2.2"/><circle cx="282" cy="150" r="2.2"/>
+      <circle cx="294" cy="156" r="2.2"/><circle cx="282" cy="159" r="2.2"/>
+    </g>
+    <g fill="#caa45c">
+      <circle cx="220" cy="170" r="2"/><circle cx="229" cy="176" r="2"/><circle cx="213" cy="178" r="2"/>
+    </g>
+  </svg>`,
+
+  fledge: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#2a2335"/>
+    <rect x="96" y="18" width="188" height="158" rx="8" fill="#41607c"/>
+    <rect x="98" y="112" width="184" height="56" fill="#54748c"/>
+    <circle cx="148" cy="74" r="17" fill="#e8c06a"/>
+    <path d="M214 58 q5 -6 10 0 M230 70 q4 -5 8 0" stroke="#28394a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <line x1="101" y1="96" x2="279" y2="96" stroke="#171221" stroke-width="7"/>
+    <rect x="96" y="18" width="188" height="158" rx="8" fill="none" stroke="#171221" stroke-width="9"/>
+    <rect x="82" y="168" width="216" height="14" rx="4" fill="#171221"/>
+    <polygon points="210,150 190,142 208,162" fill="#c79a45"/>
+    <ellipse cx="228" cy="152" rx="20" ry="14" fill="#e0b153"/>
+    <path d="M218 148 Q230 132 244 146 Q230 154 218 148 Z" fill="#c79a45"/>
+    <circle cx="248" cy="136" r="10" fill="#e0b153"/>
+    <polygon points="257,134 267,137 257,140" fill="#b8893f"/>
+    <circle cx="250.5" cy="134" r="1.5" fill="#2a2335"/>
+    <path d="M222 164 L222 168 M232 164 L232 168" stroke="#8a6a33" stroke-width="2" stroke-linecap="round" fill="none"/>
+  </svg>`,
+
+  sky: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#22405c"/>
+    <rect y="120" width="380" height="100" fill="#2d4f6c"/>
+    <rect y="170" width="380" height="50" fill="#3c5f7c"/>
+    <ellipse cx="262" cy="58" rx="72" ry="12" fill="#2a4a66"/>
+    <ellipse cx="130" cy="36" rx="58" ry="10" fill="#2a4a66"/>
+    <circle cx="80" cy="172" r="26" fill="#e8c06a"/>
+    <polygon points="236,110 220,120 238,116" fill="#c79a45"/>
+    <path d="M244 102 Q230 78 212 74 Q230 96 240 105 Z" fill="#c79a45"/>
+    <path d="M258 100 Q268 78 286 72 Q272 96 262 104 Z" fill="#c79a45"/>
+    <ellipse cx="250" cy="105" rx="16" ry="9" fill="#e0b153" transform="rotate(-16 250 105)"/>
+    <circle cx="265" cy="95" r="7" fill="#e0b153"/>
+    <polygon points="271,93 279,95 271,97" fill="#b8893f"/>
+    <rect y="204" width="380" height="16" fill="#15101e"/>
+    <path d="M308 204 A16 16 0 0 1 340 204 Z" fill="#e08a4b"/>
+    <path d="M312 204 A12 12 0 0 1 336 204 Z" fill="#f5b078"/>
+  </svg>`,
+
+  good: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#352b3f"/>
+    <rect y="90" width="380" height="130" fill="#6b4a3f"/>
+    <rect y="142" width="380" height="78" fill="#a06a3f"/>
+    <circle cx="190" cy="142" r="34" fill="#eec272"/>
+    <rect y="196" width="380" height="24" fill="#1d1426"/>
+    <path d="M84 196 A18 18 0 0 1 120 196 Z" fill="#e08a4b"/>
+    <path d="M89 196 A13 13 0 0 1 115 196 Z" fill="#f5b078"/>
+    <g fill="#eec272">
+      <circle cx="206" cy="104" r="2.6"/><circle cx="196" cy="93" r="2.1"/><circle cx="188" cy="83" r="1.6"/>
+    </g>
+    <g transform="rotate(8 252 132)">
+      <polygon points="268,138 286,147 266,147" fill="#c79a45"/>
+      <path d="M246 128 Q238 102 220 96 Q236 122 243 133 Z" fill="#c79a45"/>
+      <path d="M258 126 Q272 108 290 104 Q272 126 262 132 Z" fill="#c79a45"/>
+      <ellipse cx="252" cy="134" rx="17" ry="10" fill="#e0b153"/>
+      <circle cx="235" cy="142" r="7.5" fill="#e0b153"/>
+      <polygon points="229,142 221,145 230,147" fill="#b8893f"/>
+      <circle cx="233.5" cy="141" r="1.4" fill="#352b3f"/>
+    </g>
+  </svg>`,
+
+  cage: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#272029"/>
+    <rect y="186" width="380" height="34" fill="#1a151c"/>
+    <ellipse cx="190" cy="190" rx="96" ry="8" fill="#141017"/>
+    <line x1="130" y1="140" x2="250" y2="140" stroke="#6e5630" stroke-width="4" stroke-linecap="round"/>
+    <polygon points="174,118 154,112 172,128" fill="#9a7c3e"/>
+    <ellipse cx="196" cy="124" rx="22" ry="14" fill="#b8923f"/>
+    <circle cx="214" cy="134" r="10" fill="#b8923f"/>
+    <polygon points="222,140 229,149 217,144" fill="#8a6a33"/>
+    <circle cx="216.5" cy="133" r="1.5" fill="#272029"/>
+    <path d="M190 137 L190 141 M202 138 L202 141" stroke="#6e5630" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <path d="M150 178 q6 -10 12 0 q-6 4 -12 0 Z" fill="#9a7c3e"/>
+    <path d="M226 180 q5 -9 11 0 q-5 4 -11 0 Z" fill="#9a7c3e"/>
+    <g stroke="#a5843e" stroke-width="1.6">
+      <line x1="138" y1="186" x2="138" y2="66"/>
+      <line x1="164" y1="186" x2="164" y2="50"/>
+      <line x1="190" y1="186" x2="190" y2="45"/>
+      <line x1="216" y1="186" x2="216" y2="50"/>
+      <line x1="242" y1="186" x2="242" y2="66"/>
+    </g>
+    <path d="M116 186 L116 110 Q116 44 190 44 Q264 44 264 110 L264 186 Z" fill="none" stroke="#c8a14e" stroke-width="3"/>
+    <rect x="106" y="184" width="168" height="10" rx="4" fill="#c8a14e"/>
+    <circle cx="190" cy="36" r="7" fill="none" stroke="#c8a14e" stroke-width="3"/>
+  </svg>`,
+
+  neutral: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#2c4156"/>
+    <ellipse cx="118" cy="42" rx="62" ry="10" fill="#3a526a"/>
+    <ellipse cx="302" cy="62" rx="52" ry="9" fill="#3a526a"/>
+    <path d="M296 44 q8 -9 16 0" stroke="#e0b153" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="304" cy="45" r="2.6" fill="#e0b153"/>
+    <rect y="170" width="380" height="50" fill="#171f29"/>
+    <g stroke="#a5843e" stroke-width="1.5">
+      <line x1="88" y1="170" x2="88" y2="84"/>
+      <line x1="108" y1="170" x2="108" y2="70"/>
+      <line x1="148" y1="170" x2="148" y2="70"/>
+      <line x1="168" y1="170" x2="168" y2="84"/>
+    </g>
+    <path d="M70 170 L70 116 Q70 64 128 64 Q186 64 186 116 L186 170 Z" fill="none" stroke="#c8a14e" stroke-width="3"/>
+    <rect x="190" y="104" width="30" height="60" rx="5" fill="none" stroke="#c8a14e" stroke-width="2.5" transform="rotate(26 190 164)"/>
+    <rect x="60" y="168" width="136" height="9" rx="4" fill="#c8a14e"/>
+    <path d="M272 186 q8 -14 16 0 q-8 6 -16 0 Z" fill="#caa45c"/>
+    <line x1="280" y1="172" x2="280" y2="190" stroke="#8a6a33" stroke-width="1.2"/>
+  </svg>`,
+
+  bad: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#17141b"/>
+    <circle cx="190" cy="96" r="66" fill="#1f1a25"/>
+    <path d="M148 52 q-14 8 -9 24" stroke="#2a2433" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M240 44 q12 10 6 26" stroke="#2a2433" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="190" cy="188" rx="62" ry="7" fill="#100d14"/>
+    <g transform="rotate(-22 190 102)">
+      <path d="M190 46 Q216 92 192 152 Q166 92 190 46 Z" fill="#caa45c"/>
+      <line x1="190" y1="50" x2="190" y2="164" stroke="#8a6a33" stroke-width="2"/>
+      <path d="M198 86 L210 81 M200 106 L214 103 M182 86 L170 81 M180 106 L166 103" stroke="#17141b" stroke-width="3" stroke-linecap="round"/>
+    </g>
+  </svg>`
+
+  ,
+
+  tempest: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#221d2e"/>
+    <circle cx="62" cy="130" r="42" fill="#322847"/>
+    <rect x="120" y="18" width="180" height="158" rx="8" fill="#1c2836"/>
+    <ellipse cx="180" cy="46" rx="60" ry="14" fill="#141d28"/>
+    <ellipse cx="262" cy="62" rx="48" ry="12" fill="#141d28"/>
+    <g stroke="#3a4a60" stroke-width="1.6" stroke-linecap="round" opacity=".8">
+      <line x1="150" y1="80" x2="143" y2="100"/><line x1="180" y1="92" x2="173" y2="112"/>
+      <line x1="210" y1="78" x2="203" y2="98"/><line x1="240" y1="94" x2="233" y2="114"/>
+      <line x1="268" y1="82" x2="261" y2="102"/><line x1="162" y1="126" x2="155" y2="146"/>
+      <line x1="226" y1="124" x2="219" y2="144"/><line x1="256" y1="134" x2="249" y2="152"/>
+    </g>
+    <line x1="125" y1="96" x2="295" y2="96" stroke="#171221" stroke-width="7"/>
+    <rect x="120" y="18" width="180" height="158" rx="8" fill="none" stroke="#171221" stroke-width="9"/>
+    <rect x="106" y="168" width="208" height="14" rx="4" fill="#171221"/>
+    <line x1="30" y1="152" x2="96" y2="152" stroke="#6e5630" stroke-width="4" stroke-linecap="round"/>
+    <line x1="63" y1="152" x2="63" y2="186" stroke="#6e5630" stroke-width="4" stroke-linecap="round"/>
+    <polygon points="48,128 30,120 46,140" fill="#c79a45"/>
+    <ellipse cx="64" cy="134" rx="18" ry="12" fill="#e0b153"/>
+    <circle cx="82" cy="121" r="9" fill="#e0b153"/>
+    <polygon points="90,119 99,121 90,124" fill="#b8893f"/>
+    <circle cx="84.5" cy="119" r="1.5" fill="#221d2e"/>
+    <path d="M58 145 L58 151 M70 145 L70 151" stroke="#8a6a33" stroke-width="2" stroke-linecap="round" fill="none"/>
+  </svg>`,
+
+  cat: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#334052"/>
+    <ellipse cx="120" cy="38" rx="64" ry="11" fill="#3e4d61"/>
+    <ellipse cx="300" cy="28" rx="52" ry="9" fill="#3e4d61"/>
+    <rect y="120" width="380" height="100" fill="#473a33"/>
+    <rect y="120" width="380" height="6" fill="#5a4a3e"/>
+    <g stroke="#3a2f29" stroke-width="1.4">
+      <line x1="0" y1="152" x2="380" y2="152"/><line x1="0" y1="184" x2="380" y2="184"/>
+      <line x1="80" y1="126" x2="80" y2="152"/><line x1="200" y1="126" x2="200" y2="152"/>
+      <line x1="320" y1="126" x2="320" y2="152"/><line x1="140" y1="152" x2="140" y2="184"/>
+      <line x1="260" y1="152" x2="260" y2="184"/>
+    </g>
+    <path d="M256 120 Q252 88 268 78 Q264 70 270 61 L279 70 L291 70 L300 61 Q306 70 302 78 Q318 90 314 120 Z" fill="#15121a"/>
+    <path d="M314 116 Q338 106 333 84" stroke="#15121a" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <circle cx="277" cy="82" r="2.2" fill="#e0b153"/>
+    <circle cx="293" cy="82" r="2.2" fill="#e0b153"/>
+    <rect x="0" y="0" width="16" height="220" fill="#171221"/>
+    <rect x="0" y="96" width="92" height="12" rx="4" fill="#171221"/>
+    <polygon points="36,76 20,68 34,86" fill="#c79a45"/>
+    <ellipse cx="50" cy="82" rx="16" ry="11" fill="#e0b153"/>
+    <circle cx="66" cy="70" r="8" fill="#e0b153"/>
+    <polygon points="73,68 81,70 73,73" fill="#b8893f"/>
+    <circle cx="68" cy="68" r="1.4" fill="#334052"/>
+    <path d="M46 92 L46 96 M56 92 L56 96" stroke="#8a6a33" stroke-width="2" stroke-linecap="round" fill="none"/>
+  </svg>`,
+
+  vigil: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#1c1f2e"/>
+    <rect x="96" y="18" width="188" height="158" rx="8" fill="#222e44"/>
+    <g fill="#cfd6e4">
+      <circle cx="140" cy="50" r="1.6"/><circle cx="190" cy="38" r="1.3"/>
+      <circle cx="236" cy="58" r="1.6"/><circle cx="160" cy="84" r="1.2"/>
+      <circle cx="214" cy="90" r="1.4"/><circle cx="258" cy="42" r="1.2"/>
+    </g>
+    <circle cx="246" cy="70" r="14" fill="#cfd6e4"/>
+    <circle cx="252" cy="66" r="12" fill="#222e44"/>
+    <line x1="101" y1="96" x2="279" y2="96" stroke="#171221" stroke-width="7"/>
+    <rect x="96" y="18" width="188" height="158" rx="8" fill="none" stroke="#171221" stroke-width="9"/>
+    <rect x="82" y="168" width="216" height="14" rx="4" fill="#171221"/>
+    <path d="M134 168 A16 16 0 0 1 166 168 Z" fill="#e08a4b"/>
+    <path d="M138 168 A12 12 0 0 1 162 168 Z" fill="#f5b078"/>
+  </svg>`,
+
+  window_closed: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#262b38"/>
+    <rect x="96" y="18" width="188" height="158" rx="8" fill="#3c5a74"/>
+    <circle cx="136" cy="58" r="13" fill="#e8c06a"/>
+    <path d="M236 96 Q248 76 264 72 Q250 94 240 100 Z" fill="#c79a45"/>
+    <path d="M224 96 Q214 78 198 74 Q212 94 220 100 Z" fill="#c79a45"/>
+    <ellipse cx="230" cy="102" rx="13" ry="8" fill="#e0b153"/>
+    <circle cx="218" cy="96" r="6" fill="#e0b153"/>
+    <polygon points="213,95 206,97 213,99" fill="#b8893f"/>
+    <circle cx="216.5" cy="95" r="1.2" fill="#262b38"/>
+    <g stroke="#9fb6c9" stroke-width="2" opacity=".32">
+      <line x1="118" y1="152" x2="200" y2="40"/>
+      <line x1="148" y1="166" x2="246" y2="34"/>
+    </g>
+    <rect x="104" y="26" width="172" height="142" fill="none" stroke="#171221" stroke-width="4"/>
+    <line x1="101" y1="96" x2="279" y2="96" stroke="#171221" stroke-width="7"/>
+    <rect x="96" y="18" width="188" height="158" rx="8" fill="none" stroke="#171221" stroke-width="9"/>
+    <rect x="82" y="168" width="216" height="14" rx="4" fill="#171221"/>
+    <path d="M252 168 q7 -12 14 0 q-7 5 -14 0 Z" fill="#caa45c"/>
+  </svg>`,
+
+  broken: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#241e27"/>
+    <rect x="60" y="20" width="260" height="180" rx="10" fill="#171219"/>
+    <g stroke="#c8a14e" stroke-width="4" stroke-linecap="round" fill="none">
+      <line x1="100" y1="22" x2="100" y2="198"/>
+      <line x1="140" y1="22" x2="140" y2="198"/>
+      <path d="M180 22 L180 80 Q158 110 178 142 L178 198"/>
+      <path d="M220 22 L220 80 Q244 110 224 142 L224 198"/>
+      <line x1="260" y1="22" x2="260" y2="198"/>
+      <line x1="300" y1="22" x2="300" y2="198"/>
+    </g>
+    <rect x="60" y="14" width="260" height="8" rx="4" fill="#c8a14e"/>
+    <rect x="60" y="198" width="260" height="8" rx="4" fill="#c8a14e"/>
+    <g transform="rotate(24 196 112)">
+      <path d="M196 94 Q207 112 197 134 Q186 112 196 94 Z" fill="#caa45c"/>
+      <line x1="196" y1="98" x2="196" y2="138" stroke="#8a6a33" stroke-width="1.6"/>
+    </g>
+  </svg>`,
+
+  scissors: `<svg viewBox="0 0 380 220" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <rect width="380" height="220" fill="#1d1822"/>
+    <g opacity=".45">
+      <path d="M300 142 L300 96 Q300 56 346 56 L380 56 L380 142 Z" fill="#141019"/>
+      <g stroke="#141019" stroke-width="3">
+        <line x1="316" y1="142" x2="316" y2="72"/>
+        <line x1="338" y1="142" x2="338" y2="60"/>
+        <line x1="362" y1="142" x2="362" y2="58"/>
+      </g>
+    </g>
+    <rect y="142" width="380" height="78" fill="#262031"/>
+    <rect y="142" width="380" height="5" fill="#3b2e22"/>
+    <path d="M122 178 L198 160" stroke="#aab4c2" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <path d="M122 164 L198 174" stroke="#8d99a8" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <circle cx="160" cy="169" r="4" fill="#5f6b7a"/>
+    <circle cx="112" cy="182" r="9" fill="none" stroke="#4a6fa5" stroke-width="5"/>
+    <circle cx="112" cy="160" r="9" fill="none" stroke="#4a6fa5" stroke-width="5"/>
+  </svg>`
+
+};
+/*ART-END*/
+const stage = document.getElementById("stage");
+const brand = document.getElementById("brand");
+const langBtn = document.getElementById("langBtn");
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+const FRESH = () => ({ named: false, hand: false, stormClosed: false, grip: 0, motive: null });
+let lang = "pt";
+let view = { kind: "title" };
+let state = FRESH();
+let lastFork = "window";
+const foundIds = new Set();
+const BITTER_IDS = ["end_window", "end_door", "end_escape"];
+
+const t = (o) => o[lang];
+
+function cond(x) {
+  if (!x) return true;
+  if (x[0] === "!") return !state[x.slice(1)];
+  let m;
+  if ((m = x.match(/^grip(>=|<=|==)(\d+)$/))) {
+    const v = state.grip, n = +m[2];
+    return m[1] === ">=" ? v >= n : m[1] === "<=" ? v <= n : v === n;
+  }
+  if ((m = x.match(/^motive==(\w+)$/))) return state.motive === m[1];
+  return !!state[x];
+}
+
+function swap(html, sky) {
+  document.body.style.backgroundColor = sky;
+  const apply = () => { stage.innerHTML = html; };
+  if (reduceMotion.matches) { apply(); window.scrollTo(0, 0); return; }
+  stage.classList.add("out");
+  setTimeout(() => {
+    apply();
+    stage.classList.remove("out");
+    window.scrollTo({ top: 0 });
+  }, 390);
+}
+
+function dotsHtml() {
+  const cats = [["good", "good"], ["bitter", "bitter"], ["tragic", "tragic"]];
+  const has = (cls) => [...foundIds].some(id => STORY.scenes[id].ending.cls === cls);
+  const catCount = cats.filter(c => has(c[0])).length;
+  const bitterCount = BITTER_IDS.filter(id => foundIds.has(id)).length;
+  let h = '<div class="dots">'
+    + cats.map(c => '<span class="dot ' + (has(c[0]) ? "on " : "") + c[1] + '"></span>').join("")
+    + "<span>" + t(STORY.ui.foundLabel) + " · " + catCount + "/3</span></div>";
+  if (bitterCount > 0) {
+    h += '<div class="dots" style="margin-top:.55rem">'
+      + BITTER_IDS.map(id => '<span class="dot ' + (foundIds.has(id) ? "on " : "") + 'bitter"></span>').join("")
+      + "<span>" + t(STORY.ui.varLabel) + " · " + bitterCount + "/3</span></div>";
+  }
+  return h;
+}
+
+function renderTitle() {
+  view = { kind: "title" };
+  const h = '<div class="title-screen">'
+    + '<div class="title-bird" aria-hidden="true">' + ART.titlebird + "</div>"
+    + '<p class="eyebrow">' + t(STORY.ui.eyebrow) + "</p>"
+    + "<h1>" + t(STORY.ui.title) + "</h1>"
+    + '<p class="subtitle">' + t(STORY.ui.subtitle) + "</p>"
+    + '<button class="begin" data-act="begin">' + t(STORY.ui.begin) + "</button>"
+    + "</div>";
+  swap(h, "#1d2333");
+}
+
+function renderScene(id) {
+  const sc = STORY.scenes[id];
+  view = { kind: "scene", id: id };
+  if (sc.fork) lastFork = id;
+  if (sc.ending) foundIds.add(id);
+
+  let h = '<figure class="art" aria-hidden="true">' + ART[sc.art] + "</figure>";
+  if (sc.ending) {
+    h += '<p class="badge ' + sc.ending.cls + '">' + t(sc.ending.badge) + "</p>";
+    h += '<h2 class="ending-title">' + t(sc.ending.title) + "</h2>";
+  }
+  h += '<div class="prose">'
+    + sc.text.filter(b => cond(b.if)).map(b => "<p" + (b.em ? ' class="extra"' : "") + ">" + t(b) + "</p>").join("")
+    + "</div>";
+
+  if (sc.choices) {
+    h += '<div class="choices">'
+      + sc.choices.map((c, i) => '<button class="choice" data-act="go" data-i="' + i + '">' + t(c.label) + "</button>").join("")
+      + "</div>";
+  }
+  if (sc.ending) {
+    h += dotsHtml();
+    h += '<div class="choices">'
+      + '<button class="choice" data-act="back">' + t(STORY.ui.back) + "</button>"
+      + '<button class="choice" data-act="restart">' + t(STORY.ui.restart) + "</button>"
+      + "</div>";
+  }
+  swap(h, sc.sky);
+}
+
+stage.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const act = b.dataset.act;
+  if (act === "begin" || act === "restart") {
+    state = FRESH();
+    lastFork = "window";
+    renderScene("storm");
+  } else if (act === "go") {
+    const sc = STORY.scenes[view.id];
+    const c = sc.choices[+b.dataset.i];
+    if (c.set) state[c.set] = true;
+    if (c.grip) state.grip += c.grip;
+    if (c.motive) state.motive = c.motive;
+    renderScene(c.to);
+  } else if (act === "back") {
+    state.motive = null;
+    renderScene(lastFork);
+  }
+});
+
+langBtn.addEventListener("click", () => {
+  lang = lang === "pt" ? "en" : "pt";
+  langBtn.textContent = lang === "pt" ? "EN" : "PT";
+  document.documentElement.lang = lang === "pt" ? "pt-BR" : "en";
+  document.title = t(STORY.ui.title);
+  brand.textContent = t(STORY.ui.brand);
+  if (view.kind === "title") renderTitle(); else renderScene(view.id);
+});
+
+brand.textContent = t(STORY.ui.brand);
+renderTitle();
+</script>
+</body>
+</html>
